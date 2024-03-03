@@ -47,6 +47,10 @@ ASkateParkCharacter::ASkateParkCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	// Create a mesh component for the Skateboard
+	SkateMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkateMesh"));
+	SkateMesh->SetupAttachment(GetCapsuleComponent());
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -84,6 +88,8 @@ void ASkateParkCharacter::SetupPlayerInputComponent(class UInputComponent* Playe
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASkateParkCharacter::Look);
 
+		//Pushing
+		EnhancedInputComponent->BindAction(PushAction, ETriggerEvent::Triggered, this, &ASkateParkCharacter::Push);
 	}
 
 }
@@ -92,22 +98,10 @@ void ASkateParkCharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
-
 	if (Controller != nullptr)
 	{
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	
-		// get right vector 
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		// add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
+		MoveIntent.Y = MovementVector.Y;
+		MoveIntent.X = MovementVector.X;
 	}
 }
 
@@ -124,6 +118,57 @@ void ASkateParkCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void ASkateParkCharacter::Push(const FInputActionValue& Value)
+{
+	if (PushCooldownRemaining <= 0) 
+	{
+		PushIntent = true;
+	}
+}
 
+void ASkateParkCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
 
+	if (PushIntent)
+	{
+		PushIntent = false;
+		Pushed = true;
+		CurrentSpeed = FMath::Lerp(CurrentSpeed, MoveIntent.Y * MaxPushSpeed, PushMultiplier * DeltaTime);
+		PushCooldownRemaining = PushCooldown;
+		PushBoostRemaining = PushBoostDuration;
+	}
+	else 
+	{
+		if (MoveIntent.Y > 0)
+		{
+			if(PushBoostRemaining > 0 && MoveIntent.Y > 0)
+				CurrentSpeed = FMath::Lerp(CurrentSpeed, MoveIntent.Y * MaxPushSpeed, PushMultiplier * DeltaTime);
+			else 
+			{
+				if (CurrentSpeed > MaxSpeed * MoveIntent.Y)
+					CurrentSpeed = FMath::Lerp(CurrentSpeed, MoveIntent.Y * MaxSpeed, DeltaTime);
+				else
+					CurrentSpeed = FMath::Lerp(CurrentSpeed, MoveIntent.Y * MaxSpeed, DefaultMultiplier * DeltaTime);
+			}
+				
+		}
+		else if (MoveIntent.Y == 0)
+		{
+			CurrentSpeed = FMath::Lerp(CurrentSpeed, 0, DeltaTime);
+		}
+		else 
+		{
+			CurrentSpeed = FMath::Lerp(CurrentSpeed, 0, BrakeMultiplier * DeltaTime);
+		}
+
+		PushCooldownRemaining -= DeltaTime;
+		PushBoostRemaining -= DeltaTime;
+	}
+
+	AddMovementInput(SkateMesh->GetForwardVector(), CurrentSpeed);
+	AddMovementInput(SkateMesh->GetRightVector(), MoveIntent.X/* * TurnRate*/);
+
+	MoveIntent = FVector2D(0, 0);
+}
 
