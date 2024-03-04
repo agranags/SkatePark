@@ -73,6 +73,9 @@ public:
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerStats)
+	float AutoLookDelay = 5;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerStats)
 	float PushCooldown = 3;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerStats)
@@ -92,6 +95,14 @@ protected:
 	/** Called for pushing input */
 	void Push(const FInputActionValue& Value);
 
+
+	/** Executes automatic camera movement */
+	void TickAutoLook(float DeltaTime);
+
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerStats)
+	float AutoLookTimer = 0;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerStats)
 	float PushCooldownRemaining = 0;
 

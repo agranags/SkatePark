@@ -107,6 +107,7 @@ void ASkateParkCharacter::Move(const FInputActionValue& Value)
 
 void ASkateParkCharacter::Look(const FInputActionValue& Value)
 {
+	AutoLookTimer = AutoLookDelay;
 	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
@@ -162,13 +163,27 @@ void ASkateParkCharacter::Tick(float DeltaTime)
 			CurrentSpeed = FMath::Lerp(CurrentSpeed, 0, BrakeMultiplier * DeltaTime);
 		}
 
-		PushCooldownRemaining -= DeltaTime;
-		PushBoostRemaining -= DeltaTime;
+		if(PushCooldownRemaining > 0)
+			PushCooldownRemaining -= DeltaTime;
+		if(PushBoostRemaining > 0)
+			PushBoostRemaining -= DeltaTime;
+		if(AutoLookTimer > 0)
+			AutoLookTimer -= DeltaTime;
 	}
 
 	AddMovementInput(SkateMesh->GetForwardVector(), CurrentSpeed);
 	AddMovementInput(SkateMesh->GetRightVector(), MoveIntent.X/* * TurnRate*/);
 
 	MoveIntent = FVector2D(0, 0);
+
+	TickAutoLook(DeltaTime);
 }
 
+void ASkateParkCharacter::TickAutoLook(float DeltaTime)
+{
+	if (AutoLookTimer <= 0) 
+	{
+		FRotator newRotator = FMath::RInterpTo(GetControlRotation(), FRotator(345, GetActorRotation().Yaw, 0), DeltaTime, 3);
+		GetController()->SetControlRotation(newRotator);
+	}
+}
