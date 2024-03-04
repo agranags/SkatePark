@@ -133,7 +133,7 @@ void ASkateParkCharacter::Look(const FInputActionValue& Value)
 
 void ASkateParkCharacter::Push(const FInputActionValue& Value)
 {
-	if (PushCooldownRemaining <= 0) 
+	if (PushCooldownRemaining <= 0 && JumpCurrentCount == 0)
 	{
 		PushIntent = true;
 	}
