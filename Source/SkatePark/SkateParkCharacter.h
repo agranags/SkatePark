@@ -52,6 +52,10 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	AActor* LineTraceBelow();
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerStats)
 	float DefaultMultiplier = 7;
 
@@ -72,7 +76,7 @@ public:
 	float TurnRate = 0.001f;
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerStats)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerMeta)
 	float AutoLookDelay = 5;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerStats)
@@ -84,7 +88,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerStats)
 	bool Pushed = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = PlayerMeta)
+	AActor* LastActorHit;
+
 protected:
+
+	/** Called for movement input */
+	void PrepareJump(const FInputActionValue& Value);
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
@@ -100,7 +110,7 @@ protected:
 	void TickAutoLook(float DeltaTime);
 
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerStats)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerMeta)
 	float AutoLookTimer = 0;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerStats)

@@ -79,6 +79,7 @@ void ASkateParkCharacter::SetupPlayerInputComponent(class UInputComponent* Playe
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
 		//Jumping
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ASkateParkCharacter::PrepareJump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
@@ -92,6 +93,17 @@ void ASkateParkCharacter::SetupPlayerInputComponent(class UInputComponent* Playe
 		EnhancedInputComponent->BindAction(PushAction, ETriggerEvent::Triggered, this, &ASkateParkCharacter::Push);
 	}
 
+}
+
+void ASkateParkCharacter::PrepareJump(const FInputActionValue& Value)
+{
+	if (JumpCurrentCount == 0)
+	{
+		AActor* ActorBelow = LineTraceBelow();
+		if(IsValid(ActorBelow))
+			LastActorHit = NULL;
+	}
+		
 }
 
 void ASkateParkCharacter::Move(const FInputActionValue& Value)
@@ -186,4 +198,12 @@ void ASkateParkCharacter::TickAutoLook(float DeltaTime)
 		FRotator newRotator = FMath::RInterpTo(GetControlRotation(), FRotator(345, GetActorRotation().Yaw, 0), DeltaTime, 3);
 		GetController()->SetControlRotation(newRotator);
 	}
+}
+
+AActor* ASkateParkCharacter::LineTraceBelow_Implementation()
+{
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT("LineTraceBelow not Overriden!"));
+
+	return NULL;
 }
